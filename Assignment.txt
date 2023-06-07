@@ -1,0 +1,101 @@
+Concepts of Parallel and Distributed Systems
+CSCI-251
+Project 1: Disk Usage
+
+Goals:
+    You may be familiar with the disk usage program available in most Linux/Unix operating systems.
+    For those not familiar with the disk usage tool, it is designed to tell you what files and folders
+    are using the space on your system. While it is possible to run it on the entirety of the disk, it
+    is more common to run in a specific directory (such as your home directory) to determine which
+    files/folders may be causing you to encroach on your given quota.
+
+    The following is a subset of the data generated when I run du -h in my home directory on the CS
+    machines.
+    211K ./public_html/2165/csci.541/Labs/HashTable/doc/search
+    605K ./public_html/2165/csci.541/Labs/HashTable/doc
+    614K ./public_html/2165/csci.541/Labs/HashTable
+    14M ./public_html/2165/csci.541/Labs
+    14M ./public_html/2165/csci.541
+    201K ./public_html/2165/csci.251
+    14M ./public_html/2165
+
+Overview:
+    You will be required to write a simplified version of du using the .net core framework. This means
+    that it can run in Linux/Mac/Windows equally well. It also means you can develop on any of the
+    aforementioned platforms using any editor you like.
+
+Design:
+    This project must be an Object Oriented application that works on any common platform (Win-
+    dows/Mac/Linux). You should test your program on multiple OSs, there are some nuances that
+    exist between the different Operating Systems with regards to handling files that you should deal
+    with.
+   
+    The application itself must be a command line application. It will accept 2 command line arguments,
+    per the following help:
+        Usage: du [-s] [-p] [-b] <path>
+        Summarize disk usage of the set of FILES, recursively for directories.
+   
+        You MUST specify one of the parameters, -s, -p, or -b
+            -s Run in single threaded mode
+            -p Run in parallel mode (uses all available processors)
+            -b Run in both parallel and single threaded mode. (runs parallel followed by sequential mode)
+
+    You must include this help message in your application when invalid command line
+    arguments are given.
+
+    If the user specified to do both parallel and sequential disk usage, you should run the parallel
+    version first. The result to display are not the entire du results, instead you should display results
+    that look like the following:
+        > dotnet run -b /Users/jsb/Dropbox
+        Directory ’/Users/jsb/Dropbox’:
+
+        Parallel Calculated in: 7.5724931s
+        76,133 folders, 332,707 files, 42,299,411,348 bytes
+
+        Sequential Calculated in: 34.0341592s
+        76,133 folders, 332,707 files, 42,299,411,348 bytes
+
+    All you need to do is calculate the time it took to run, the total folders, the total files, and the size.
+    Display them in the format above. We are not concerned about the numbers that add up to the
+    totals, as that is usually the bottleneck (displaying the results). We want to compare the parallel
+    and sequential versions, not the output time.
+
+    When writing your code, you need not explicitly create threads. Instead, you should write the paral-
+    lel version using Parallel ForEach statements, while the Sequential version should use a traditional
+    ForEach.
+
+    Calculating the parallel and sequential version should both be in their own methods, and there will
+    be some nuances you will have to deal with with the arguments to each of the functions you write.
+
+    Because you may not have access to all files on a system, you can ignore the files and directories
+    that you do not have access to, in your calculation. In other words, if you attempt to run you
+    program on c:\ on Windows, you should ignore any files you try to read in C:\Windows\System32,
+    which should generate an error when you try to read those files.
+
+Testing:
+    The application will be tested in both Windows 10, Mac OS 10.15 and Ubuntu Linux 18.04. Your
+    program should not crash at any time (add exception handling). Be sure to test it in multiple
+    different paths with varied command line arguments. You may also safely ignore any files and
+    directories that can’t be read (for example, system/read only files).
+
+    Sample outputs are provided for you in text format, so that you can compare outputs for different
+    scenarios to ensure they match. You can find them here: https://cs.rit.edu/~jsb/project1_
+    samples.txt
+
+Grading:
+    • For full credit, your parallel version must run faster than the sequential version on large data
+    sets (similar to the example provided).
+    • Your times must also be in the order of magnitude of what I provided in the example. Note,
+    this was run on a Quad Core i5 with an SSD drive.
+    • Your output must match the output provided, including the formatting of numbers.
+    • The counts for parallel and sequential must match.
+
+Submission:
+    Zip up your solution in a flat file (no folders) called project1.zip. The zip file should contain the
+    following files:
+    Program.cs
+    du.csproj
+    I will test your project by running:
+    • dotnet run
+    and running the executable that was generated. You should do the same to ensure your submission
+    works. Submit this to the myCourses dropbox before the due date.
