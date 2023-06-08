@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace DiskUsage{
     public class Program{
+
         static void Main(string[] args){
             // Check if input is valid and then execute methods accordingly
             if(args.Length >= 2 && Directory.Exists(args[1])){
@@ -46,7 +47,56 @@ namespace DiskUsage{
         /// </summary>
         /// <param name="directory">The directory to use</param>
         private static void SequentialDU(string directory){
+            // Start timer to see how long SequentialDU takes
+            var timer = Stopwatch.StartNew();
+            long totalBytes = 0;
+            int totalFiles = 0;
+            int totalFolders = 0;
 
+            /// <summary>
+            /// Recursively traverses a directory and all of its subdirectories,
+            /// determining the total bytes, files, and folders as it goes.
+            /// </summary>
+            /// <param name="dir">The directory to traverse</param>
+            /// <remarks>
+            /// This function is inside SequentialDU so that it can use the
+            /// totalBytes, totalFiles, and totalFolders variables
+            /// </remarks>
+            void MeasureDir(string dir){
+                try{
+                    string[] subDirectories = Directory.GetDirectories(dir);
+                    string[] files = Directory.GetFiles(dir);
+
+                    // Traverse each subdirectory before accessing files incase
+                    // there's an access issue causing the method to quit
+                    foreach(var subDirectory in subDirectories){
+                        totalFolders++;
+                        MeasureDir(subDirectory);
+                    }
+                    foreach(var file in files){
+                        totalFiles++;
+                        totalBytes += new FileInfo(file).Length;
+                    }
+                }
+                catch(UnauthorizedAccessException e){
+                    Console.WriteLine("Unauthorized access: " + e.Message );
+                }
+                catch(DirectoryNotFoundException e){
+                    Console.WriteLine("That directory doesn't exist: " + e.Message);
+                }
+                catch(Exception e){
+                    Console.WriteLine("An error occurred: " + e.Message);
+                }
+            }
+
+            //  Measure directory disk usage
+            MeasureDir(directory);
+            
+            //  Stop the timer after measuring
+            timer.Stop();
+
+            Console.WriteLine($"Sequential Calculated in: {timer.Elapsed.TotalSeconds}s");
+            Console.WriteLine($"{totalFolders} folders, {totalFiles} files, {totalBytes} bytes");
         }
 
         /// <summary>
@@ -54,7 +104,7 @@ namespace DiskUsage{
         /// </summary>
         /// <param name="directory">The directory to use</param>
         private static void ParallelDU(string directory){
-
+            
         }
 
         /// <summary>
