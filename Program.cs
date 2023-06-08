@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 
 namespace DiskUsage{
     public class Program{
+        // Initialize console lock so writing to console is protected
+        private static readonly object consoleLock = new object();
 
         static void Main(string[] args){
             // Check if input is valid and then execute methods accordingly
@@ -39,7 +41,6 @@ namespace DiskUsage{
             }
             // Print the proper argument format and return
             PrintHelp();
-            return;
         }
 
         /// <summary>
@@ -49,6 +50,7 @@ namespace DiskUsage{
         private static void SequentialDU(string directory){
             // Start timer to see how long SequentialDU takes
             var timer = Stopwatch.StartNew();
+
             long totalBytes = 0;
             int totalFiles = 0;
             int totalFolders = 0;
@@ -78,25 +80,27 @@ namespace DiskUsage{
                         totalBytes += new FileInfo(file).Length;
                     }
                 }
-                catch(UnauthorizedAccessException e){
-                    Console.WriteLine("Unauthorized access: " + e.Message );
-                }
-                catch(DirectoryNotFoundException e){
-                    Console.WriteLine("That directory doesn't exist: " + e.Message);
-                }
                 catch(Exception e){
-                    Console.WriteLine("An error occurred: " + e.Message);
+                    Console.WriteLine(e.Message);
                 }
             }
 
-            //  Measure directory disk usage
-            MeasureDir(directory);
+            try{
+                //  Measure directory disk usage
+                MeasureDir(directory);
+            }
+            catch (Exception e){
+                Console.WriteLine(e.Message);
+            }
+            finally{
+                //  Stop the timer after measuring
+                timer.Stop();
+            }
+            lock(consoleLock) {
+                Console.WriteLine($"Sequential Calculated in: {timer.Elapsed.TotalSeconds}s");
+                Console.WriteLine($"{totalFolders} folders, {totalFiles} files, {totalBytes} bytes");
+            }
             
-            //  Stop the timer after measuring
-            timer.Stop();
-
-            Console.WriteLine($"Sequential Calculated in: {timer.Elapsed.TotalSeconds}s");
-            Console.WriteLine($"{totalFolders} folders, {totalFiles} files, {totalBytes} bytes");
         }
 
         /// <summary>
@@ -104,7 +108,74 @@ namespace DiskUsage{
         /// </summary>
         /// <param name="directory">The directory to use</param>
         private static void ParallelDU(string directory){
-            
+            // Start timer to see how long ParallelDU takes
+            var timer = Stopwatch.StartNew();
+            long totalBytes = 0;
+            int totalFiles = 0;
+            int totalFolders = 0;
+
+            /// <summary>
+            /// Recursively traverses a directory and all of its subdirectories,
+            /// determining the total bytes, files, and folders as it goes.
+            /// </summary>
+            /// <param name="dir">The directory to traverse</param>
+            /// <remarks>
+            /// This function is inside ParallelDU so that it can use the
+            /// totalBytes, totalFiles, and totalFolders variables
+            /// </remarks>
+            void MeasureDir(string dir){
+                try{
+                    string[] subDirectories = Directory.GetDirectories(dir);
+                    string[] files = Directory.GetFiles(dir);
+
+                    // Start thread for each subdirectory before measuring files
+                    Parallel.ForEach(subDirectories, subDirectory => {
+                        try{
+                            Interlocked.Increment(ref totalFolders);
+                            MeasureDir(subDirectory);
+                        }
+                        catch(Exception e){
+                            lock(consoleLock){
+                                Console.WriteLine(e.Message);
+                            }
+                        }
+                        
+                    });
+                    // Start a thread for measuring each file
+                    Parallel.ForEach(files, file =>{
+                        try{
+                            Interlocked.Increment(ref totalFiles);
+                            Interlocked.Add(ref totalBytes, new FileInfo(file).Length);
+                        }
+                        catch(Exception e){
+                            lock(consoleLock){
+                                Console.WriteLine(e.Message);
+                            }
+                        }
+                    });
+                }
+                catch(Exception e){
+                    lock(consoleLock){
+                        Console.WriteLine(e.Message);
+                    }
+                }
+            }
+
+            try{
+                //  Measure directory disk usage
+                MeasureDir(directory);
+            }
+            catch (Exception e){
+                Console.WriteLine(e.Message);
+            }
+            finally{
+                //  Stop the timer after measuring
+                timer.Stop();
+            }
+            lock(consoleLock) {
+                Console.WriteLine($"Parallel Calculated in: {timer.Elapsed.TotalSeconds}s");
+                Console.WriteLine($"{totalFolders} folders, {totalFiles} files, {totalBytes} bytes");
+            }
         }
 
         /// <summary>
@@ -121,7 +192,6 @@ namespace DiskUsage{
             Console.WriteLine("\t-s Run in single threaded mode");
             Console.WriteLine("\t-p Run in parallel mode (uses all available processors)");
             Console.WriteLine("\t-b Run in both parallel and single threaded mode. (runs parallel followed by sequential mode)");
-            return;
         }
     }
 }
