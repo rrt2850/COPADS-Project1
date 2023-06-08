@@ -7,15 +7,16 @@
 * of the UNIX "du" command, which recursively lists the size of all files and directories
 * in a given directory.
 *
-* Note: I run this like 'dotnet run -- -p "C:\"' the 
+* Note: I run this like 'dotnet run -- -p "C:\"' but it does work when you run the exe
+*       when you do 'dotnet run' initially to generate the exe, it will display the help
+*       message because it thinks you ran it without giving it arguments
+*       on my laptop, it generated the exe file at '.\bin\Debug\net6.0\du.exe'
 ********************************************************************************************/
 
-using System;
-using System.IO;
 using System.Diagnostics;
-using System.Threading.Tasks;
 
-namespace DiskUsage{
+namespace DiskUsage
+{
     public class Program{
         // Initialize console lock so writing to console is protected
         private static readonly object consoleLock = new object();
