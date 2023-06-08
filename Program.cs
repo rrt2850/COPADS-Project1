@@ -6,6 +6,8 @@
 * This program is my solution to the Project 1 assignment for CSCI251. It is a recreation
 * of the UNIX "du" command, which recursively lists the size of all files and directories
 * in a given directory.
+*
+* Note: I run this like 'dotnet run -- -p "C:\"' the 
 ********************************************************************************************/
 
 using System;
@@ -80,9 +82,7 @@ namespace DiskUsage{
                         totalBytes += new FileInfo(file).Length;
                     }
                 }
-                catch(Exception e){
-                    Console.WriteLine(e.Message);
-                }
+                catch{}
             }
 
             try{
@@ -98,7 +98,7 @@ namespace DiskUsage{
             }
             lock(consoleLock) {
                 Console.WriteLine($"Sequential Calculated in: {timer.Elapsed.TotalSeconds}s");
-                Console.WriteLine($"{totalFolders} folders, {totalFiles} files, {totalBytes} bytes");
+                Console.WriteLine($"{totalFolders:N0} folders, {totalFiles:N0} files, {totalBytes:N0} bytes");
             }
             
         }
@@ -134,11 +134,7 @@ namespace DiskUsage{
                             Interlocked.Increment(ref totalFolders);
                             MeasureDir(subDirectory);
                         }
-                        catch(Exception e){
-                            lock(consoleLock){
-                                Console.WriteLine(e.Message);
-                            }
-                        }
+                        catch{}
                         
                     });
                     // Start a thread for measuring each file
@@ -147,17 +143,11 @@ namespace DiskUsage{
                             Interlocked.Increment(ref totalFiles);
                             Interlocked.Add(ref totalBytes, new FileInfo(file).Length);
                         }
-                        catch(Exception e){
-                            lock(consoleLock){
-                                Console.WriteLine(e.Message);
-                            }
-                        }
+                        catch{}
                     });
                 }
                 catch(Exception e){
-                    lock(consoleLock){
-                        Console.WriteLine(e.Message);
-                    }
+                    Console.WriteLine(e.Message);
                 }
             }
 
@@ -172,10 +162,9 @@ namespace DiskUsage{
                 //  Stop the timer after measuring
                 timer.Stop();
             }
-            lock(consoleLock) {
-                Console.WriteLine($"Parallel Calculated in: {timer.Elapsed.TotalSeconds}s");
-                Console.WriteLine($"{totalFolders} folders, {totalFiles} files, {totalBytes} bytes");
-            }
+            Console.WriteLine($"Parallel Calculated in: {timer.Elapsed.TotalSeconds}s");
+            Console.WriteLine($"{totalFolders:N0} folders, {totalFiles:N0} files, {totalBytes:N0} bytes");
+           
         }
 
         /// <summary>
